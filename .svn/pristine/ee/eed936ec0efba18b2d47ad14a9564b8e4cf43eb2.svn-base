@@ -1,0 +1,64 @@
+package com.nexters.jung2.daemon.sentence;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import org.apache.log4j.Logger;
+
+public class MerSen
+{
+  private static Logger logger = Logger.getLogger(MerSen.class.getName());
+
+  public String mergeSentence(SentenceConf sentence, HashMap<String, ArrayList<Jung2Conf>> jung2)
+  {
+    String strSentence = sentence.getStrSentence();
+
+    HashMap mapMP = sentence.getMapMP();
+    HashMap mapChgData = new HashMap();
+
+    ArrayList arrayJung2 = (ArrayList)jung2.get("MM");
+
+    ArrayList arrayMM = (ArrayList)mapMP.get("MM");
+
+    for (int i = 0; i < arrayMM.size(); i++) {
+      String words = (String)arrayMM.get(i);
+      int start = strSentence.indexOf(words);
+      int end = start + words.length();
+
+      if (start > -1) {
+        String strStartWords = strSentence.substring(0, start);
+        String strEndWords = strSentence.substring(end, strSentence.length());
+
+        strSentence = strStartWords + "$" + i + "#" + strEndWords;
+
+        mapChgData.put("$" + i + "#", words);
+      }
+    }
+
+    for (int i = 0; i < (mapChgData.size() < arrayJung2.size() ? mapChgData.size() : arrayJung2.size()); i++) {
+      Jung2Conf jun2con = (Jung2Conf)arrayJung2.get(i);
+      HashMap mapjun2AvailWords = jun2con.getMapAvailableWords();
+
+      String strChgWords = (String)mapChgData.get("$" + i + "#");
+      String strFinalWords = strChgWords;
+
+      logger.debug("mapChgData.size()::" + mapChgData.size());
+      logger.debug("i::" + i);
+      logger.debug("(mapChgData.size()>1 && (i>0 && (i%3==0 || i==1)))::" + ((mapChgData.size() > 1) && (i > 0) && ((i % 3 == 0) || (i == 1))));
+      logger.debug("(mapChgData.size()==1)::" + (mapChgData.size() == 1));
+      logger.debug("((mapChgData.size()>1 && (i>0 && (i%3==0 || i==1))) || (mapChgData.size()==1))::" + (((mapChgData.size() > 1) && (i > 0) && ((i % 3 == 0) || (i == 1))) || (mapChgData.size() == 1)));
+
+      if (((mapChgData.size() > 1) && (i > 0) && ((i % 3 == 0) || (i == 1))) || (mapChgData.size() == 1)) {
+        if (((String)mapjun2AvailWords.get("type2")).equals("T"))
+          strFinalWords = jun2con.getStrSentence() + "을 " + strFinalWords;
+        else if (((String)mapjun2AvailWords.get("type1")).equals("T")) {
+          strFinalWords = jun2con.getStrSentence() + "는 " + strFinalWords;
+        }
+      }
+
+      strSentence = strSentence.replace("$" + i + "#", strFinalWords);
+    }
+
+    return strSentence;
+  }
+}
